@@ -1,0 +1,622 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Teams vs Agents in Claude Code</title>
+<style>
+  :root {
+    --bg: #0b0d12;
+    --bg-soft: #11141b;
+    --panel: #161a23;
+    --panel-2: #1c2230;
+    --border: #262c3b;
+    --border-soft: #1f2533;
+    --text: #e7ecf3;
+    --muted: #97a2b6;
+    --dim: #6b7488;
+    --agent: #a78bfa;    /* violet */
+    --agent-2: #7c5cff;
+    --team: #34d399;     /* emerald */
+    --team-2: #10b981;
+    --accent: #f59e0b;
+    --danger: #f87171;
+    --code-bg: #0e1118;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body {
+    background:
+      radial-gradient(1200px 600px at 10% -10%, rgba(124,92,255,0.18), transparent 60%),
+      radial-gradient(1000px 500px at 100% 0%, rgba(16,185,129,0.14), transparent 60%),
+      var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 16px;
+    line-height: 1.55;
+    min-height: 100vh;
+  }
+
+  .wrap {
+    max-width: 1180px;
+    margin: 0 auto;
+    padding: 56px 28px 96px;
+  }
+
+  /* HERO */
+  .eyebrow {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    background: var(--panel);
+    border: 1px solid var(--border);
+    padding: 6px 12px;
+    border-radius: 999px;
+  }
+  .eyebrow .dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--agent), var(--team));
+    box-shadow: 0 0 12px rgba(167,139,250,0.6);
+  }
+
+  h1 {
+    font-size: clamp(34px, 5.4vw, 60px);
+    line-height: 1.05;
+    letter-spacing: -0.02em;
+    margin: 18px 0 14px;
+    font-weight: 700;
+  }
+  h1 .vs {
+    display: inline-block;
+    padding: 0 14px;
+    margin: 0 4px;
+    color: var(--dim);
+    font-weight: 500;
+  }
+  h1 .agents { color: var(--agent); }
+  h1 .teams  { color: var(--team); }
+
+  .lede {
+    color: var(--muted);
+    font-size: clamp(16px, 1.6vw, 19px);
+    max-width: 780px;
+    margin: 0 0 36px;
+  }
+  .lede b { color: var(--text); font-weight: 600; }
+
+  /* ONE-LINERS */
+  .one-liners {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 56px;
+  }
+  @media (max-width: 760px) { .one-liners { grid-template-columns: 1fr; } }
+  .ol {
+    border: 1px solid var(--border);
+    background: var(--panel);
+    border-radius: 14px;
+    padding: 20px 22px;
+    position: relative;
+    overflow: hidden;
+  }
+  .ol::before {
+    content: "";
+    position: absolute; inset: 0;
+    background: linear-gradient(135deg, transparent 60%, currentColor 200%);
+    opacity: 0.06; pointer-events: none;
+  }
+  .ol.agent { color: var(--agent); }
+  .ol.team  { color: var(--team); }
+  .ol .label {
+    font-size: 11px; letter-spacing: 0.16em; text-transform: uppercase;
+    font-weight: 700; opacity: 0.9;
+  }
+  .ol .title {
+    margin: 6px 0 8px; font-size: 22px; color: var(--text); font-weight: 600;
+  }
+  .ol .desc { color: var(--muted); font-size: 15px; }
+
+  /* SECTION */
+  section { margin-bottom: 64px; }
+  h2 {
+    font-size: 26px;
+    letter-spacing: -0.01em;
+    margin: 0 0 6px;
+    font-weight: 650;
+  }
+  .sub {
+    color: var(--muted);
+    margin: 0 0 24px;
+    font-size: 15px;
+  }
+
+  /* DIAGRAM */
+  .diagrams {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 22px;
+  }
+  @media (max-width: 880px) { .diagrams { grid-template-columns: 1fr; } }
+
+  .diagram {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 22px;
+  }
+  .diagram h3 {
+    margin: 0 0 4px;
+    font-size: 17px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .diagram h3 .pill {
+    font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase;
+    padding: 3px 8px; border-radius: 999px;
+    border: 1px solid currentColor;
+  }
+  .diagram.agent h3, .diagram.agent h3 .pill { color: var(--agent); }
+  .diagram.team h3,  .diagram.team h3 .pill  { color: var(--team); }
+  .diagram p.note { color: var(--muted); font-size: 13px; margin: 4px 0 16px; }
+
+  .stage {
+    position: relative;
+    height: 280px;
+    border-radius: 12px;
+    background:
+      radial-gradient(400px 200px at 50% 110%, rgba(255,255,255,0.04), transparent 60%),
+      var(--bg-soft);
+    border: 1px dashed var(--border);
+    overflow: hidden;
+  }
+
+  .node {
+    position: absolute;
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    width: 84px; height: 84px;
+    border-radius: 14px;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    font-size: 12px; color: var(--text);
+    text-align: center;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.3);
+  }
+  .node .role { font-size: 10px; color: var(--dim); letter-spacing: 0.08em; text-transform: uppercase; margin-top: 4px; }
+  .node.you {
+    width: 96px; height: 96px;
+    background: linear-gradient(135deg, #222a3a, #181d28);
+    border-color: #3a4258;
+  }
+  .node.you .role { color: var(--accent); }
+
+  .node.a { border-color: var(--agent); box-shadow: 0 0 0 1px rgba(167,139,250,0.15), 0 6px 22px rgba(124,92,255,0.18); }
+  .node.a .role { color: var(--agent); }
+  .node.t { border-color: var(--team); box-shadow: 0 0 0 1px rgba(52,211,153,0.15), 0 6px 22px rgba(16,185,129,0.18); }
+  .node.t .role { color: var(--team); }
+
+  /* Agent diagram positions: hub-and-spoke (you in center) */
+  .agent-stage .you { left: 50%; top: 50%; transform: translate(-50%, -50%); }
+  .agent-stage .a1 { left: 8%;   top: 14%; }
+  .agent-stage .a2 { right: 8%;  top: 14%; }
+  .agent-stage .a3 { left: 8%;   bottom: 14%; }
+  .agent-stage .a4 { right: 8%;  bottom: 14%; }
+
+  /* Team diagram positions: mesh of peers, lead bottom-left links to you */
+  .team-stage .you { left: 6%; top: 50%; transform: translateY(-50%); }
+  .team-stage .lead { left: 38%; top: 50%; transform: translateY(-50%); border-color: var(--team-2); }
+  .team-stage .lead::after {
+    content: "LEAD"; position: absolute; top: -10px; right: -10px;
+    background: var(--team-2); color: #0b0d12;
+    font-size: 9px; padding: 2px 6px; border-radius: 6px; letter-spacing: 0.08em; font-weight: 700;
+  }
+  .team-stage .t1 { right: 8%; top: 8%; }
+  .team-stage .t2 { right: 8%; bottom: 8%; }
+  .team-stage .t3 { right: 38%; top: 50%; transform: translateY(-50%); }
+
+  /* SVG lines overlay */
+  .stage svg {
+    position: absolute; inset: 0; width: 100%; height: 100%;
+    pointer-events: none;
+  }
+  .line { stroke-width: 1.5; fill: none; }
+  .agent .line { stroke: var(--agent); stroke-dasharray: 4 4; opacity: 0.7; }
+  .team .line  { stroke: var(--team);  opacity: 0.7; }
+  .line-solid { stroke-dasharray: none; opacity: 0.9 !important; }
+
+  .legend {
+    display: flex; flex-wrap: wrap; gap: 14px;
+    margin-top: 14px; font-size: 12px; color: var(--muted);
+  }
+  .legend .item { display: inline-flex; align-items: center; gap: 6px; }
+  .swatch { width: 18px; height: 2px; background: currentColor; display: inline-block; border-radius: 2px; }
+  .swatch.dashed { background: repeating-linear-gradient(90deg, currentColor 0 4px, transparent 4px 8px); height: 2px; }
+
+  /* COMPARISON TABLE */
+  .compare {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+  .compare table { width: 100%; border-collapse: collapse; }
+  .compare th, .compare td {
+    text-align: left;
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border-soft);
+    vertical-align: top;
+    font-size: 14.5px;
+  }
+  .compare thead th {
+    background: var(--panel-2);
+    color: var(--muted);
+    font-size: 12px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-weight: 600;
+  }
+  .compare thead th.col-agent { color: var(--agent); }
+  .compare thead th.col-team  { color: var(--team); }
+  .compare tr:last-child td { border-bottom: none; }
+  .compare td.feature { color: var(--muted); width: 26%; font-weight: 500; }
+  .compare td.agent-cell { background: linear-gradient(180deg, rgba(167,139,250,0.04), transparent); }
+  .compare td.team-cell  { background: linear-gradient(180deg, rgba(52,211,153,0.04), transparent); }
+  .check { color: var(--team); font-weight: 700; margin-right: 6px; }
+  .cross { color: var(--danger); font-weight: 700; margin-right: 6px; }
+  code.inline {
+    background: var(--code-bg);
+    padding: 2px 6px;
+    border-radius: 6px;
+    font-size: 0.9em;
+    color: #cbd5e1;
+    border: 1px solid var(--border-soft);
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+
+  /* CODE BLOCKS */
+  .code-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 22px;
+  }
+  @media (max-width: 880px) { .code-grid { grid-template-columns: 1fr; } }
+  .code-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+  .code-card .head {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--panel-2);
+    font-size: 13px;
+  }
+  .code-card.agent .head { color: var(--agent); }
+  .code-card.team  .head { color: var(--team); }
+  .code-card .head .file { color: var(--muted); font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; }
+  pre {
+    margin: 0;
+    padding: 16px 18px;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: 12.5px;
+    line-height: 1.6;
+    color: #d8e0ee;
+    background: var(--code-bg);
+    overflow-x: auto;
+  }
+  .kw { color: #f0a3ff; }
+  .str { color: #9ee493; }
+  .com { color: #6b7488; font-style: italic; }
+  .key { color: #7cc4ff; }
+  .punct { color: #97a2b6; }
+
+  /* WHEN TO USE */
+  .when {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 22px;
+  }
+  @media (max-width: 880px) { .when { grid-template-columns: 1fr; } }
+  .when-card {
+    border: 1px solid var(--border);
+    background: var(--panel);
+    border-radius: 14px;
+    padding: 22px;
+  }
+  .when-card h3 {
+    margin: 0 0 12px;
+    font-size: 17px;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .when-card.agent h3 { color: var(--agent); }
+  .when-card.team  h3 { color: var(--team); }
+  .when-card ul { padding-left: 20px; margin: 0; }
+  .when-card li { margin: 8px 0; color: var(--text); }
+  .when-card li::marker { color: var(--dim); }
+
+  /* TLDR */
+  .tldr {
+    background:
+      linear-gradient(135deg, rgba(167,139,250,0.08), rgba(52,211,153,0.08));
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 22px 26px;
+  }
+  .tldr h3 { margin: 0 0 8px; font-size: 16px; letter-spacing: 0.04em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+  .tldr p { margin: 0; font-size: 17px; color: var(--text); }
+  .tldr .agent-word { color: var(--agent); font-weight: 600; }
+  .tldr .team-word  { color: var(--team);  font-weight: 600; }
+
+  .warn {
+    margin-top: 14px;
+    font-size: 13px;
+    color: var(--muted);
+    border-left: 2px solid var(--accent);
+    padding: 4px 12px;
+  }
+  .warn b { color: var(--accent); }
+
+  footer {
+    margin-top: 56px;
+    color: var(--dim);
+    font-size: 12.5px;
+    text-align: center;
+  }
+  footer a { color: var(--muted); }
+
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <span class="eyebrow"><span class="dot"></span>Claude Code · concept explainer</span>
+  <h1>
+    <span class="agents">Agents</span>
+    <span class="vs">vs</span>
+    <span class="teams">Teams</span>
+  </h1>
+  <p class="lede">
+    Two different ways Claude Code orchestrates work. <b>Agents</b> are lightweight specialists that report back to you inside one session. <b>Teams</b> are independent full sessions that talk <i>to each other</i> and coordinate through a lead.
+  </p>
+
+  <div class="one-liners">
+    <div class="ol agent">
+      <div class="label">Agents (Subagents)</div>
+      <div class="title">Workers inside your session.</div>
+      <div class="desc">Spawned for a task, given their own context window + tool set, and return a single result to you.</div>
+    </div>
+    <div class="ol team">
+      <div class="label">Agent Teams <span style="opacity:.7">· experimental</span></div>
+      <div class="title">Independent sessions that collaborate.</div>
+      <div class="desc">Each teammate is a full Claude Code session. They message each other and coordinate through a lead.</div>
+    </div>
+  </div>
+
+  <!-- ARCHITECTURE DIAGRAMS -->
+  <section>
+    <h2>How the wiring differs</h2>
+    <p class="sub">Look at the arrows — that is the real difference.</p>
+
+    <div class="diagrams">
+      <!-- AGENT DIAGRAM -->
+      <div class="diagram agent">
+        <h3>Agents <span class="pill">hub &amp; spoke</span></h3>
+        <p class="note">You are the hub. Each subagent talks only to you. They never see each other.</p>
+        <div class="stage agent-stage">
+          <svg viewBox="0 0 100 100" preserveAspectRatio="none">
+            <line class="line" x1="50" y1="50" x2="14" y2="20" />
+            <line class="line" x1="50" y1="50" x2="86" y2="20" />
+            <line class="line" x1="50" y1="50" x2="14" y2="80" />
+            <line class="line" x1="50" y1="50" x2="86" y2="80" />
+          </svg>
+          <div class="node you"><div>You</div><div class="role">Main session</div></div>
+          <div class="node a a1"><div>Explore</div><div class="role">read-only</div></div>
+          <div class="node a a2"><div>Plan</div><div class="role">read-only</div></div>
+          <div class="node a a3"><div>Reviewer</div><div class="role">specialist</div></div>
+          <div class="node a a4"><div>General</div><div class="role">multi-step</div></div>
+        </div>
+        <div class="legend" style="color: var(--agent);">
+          <span class="item"><span class="swatch dashed"></span> request → result (returns to you)</span>
+        </div>
+      </div>
+
+      <!-- TEAM DIAGRAM -->
+      <div class="diagram team">
+        <h3>Teams <span class="pill">mesh + lead</span></h3>
+        <p class="note">You talk to the lead. The lead and teammates message each other directly. Each is a full session.</p>
+        <div class="stage team-stage">
+          <svg viewBox="0 0 100 100" preserveAspectRatio="none">
+            <!-- you <-> lead -->
+            <line class="line line-solid" x1="12" y1="50" x2="38" y2="50" />
+            <!-- lead <-> teammates -->
+            <line class="line line-solid" x1="38" y1="50" x2="86" y2="14" />
+            <line class="line line-solid" x1="38" y1="50" x2="86" y2="86" />
+            <line class="line line-solid" x1="38" y1="50" x2="62" y2="50" />
+            <!-- teammates <-> teammates (mesh) -->
+            <line class="line" x1="86" y1="14" x2="86" y2="86" />
+            <line class="line" x1="86" y1="14" x2="62" y2="50" />
+            <line class="line" x1="86" y1="86" x2="62" y2="50" />
+          </svg>
+          <div class="node you"><div>You</div><div class="role">Operator</div></div>
+          <div class="node t lead"><div>Lead</div><div class="role">coordinator</div></div>
+          <div class="node t t1"><div>Security</div><div class="role">teammate</div></div>
+          <div class="node t t2"><div>Perf</div><div class="role">teammate</div></div>
+          <div class="node t t3"><div>Tests</div><div class="role">teammate</div></div>
+        </div>
+        <div class="legend" style="color: var(--team);">
+          <span class="item"><span class="swatch"></span> direct messaging (solid = with you/lead, light = peer-to-peer)</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- COMPARISON TABLE -->
+  <section>
+    <h2>Side-by-side</h2>
+    <p class="sub">The properties that actually matter when you're deciding which to reach for.</p>
+
+    <div class="compare">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:26%">Property</th>
+            <th class="col-agent">Agents (Subagents)</th>
+            <th class="col-team">Agent Teams</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="feature">What it is</td>
+            <td class="agent-cell">A specialized worker spawned <i>inside</i> your main session.</td>
+            <td class="team-cell">A collection of <i>independent</i> Claude Code sessions that coordinate.</td>
+          </tr>
+          <tr>
+            <td class="feature">Context window</td>
+            <td class="agent-cell">Its own — does <span class="cross">✕</span>not see your conversation history.</td>
+            <td class="team-cell">Each teammate has its own full session window.</td>
+          </tr>
+          <tr>
+            <td class="feature">Communication</td>
+            <td class="agent-cell">Returns <b>one result</b> to you. Subagents never see each other.</td>
+            <td class="team-cell">Teammates message <b>each other</b> directly + the lead.</td>
+          </tr>
+          <tr>
+            <td class="feature">Configured in</td>
+            <td class="agent-cell">
+              <code class="inline">.claude/agents/</code> (project)<br/>
+              <code class="inline">~/.claude/agents/</code> (user)
+            </td>
+            <td class="team-cell">
+              <code class="inline">~/.claude/teams/{name}/config.json</code><br/>
+              Enabled by env flag (see below).
+            </td>
+          </tr>
+          <tr>
+            <td class="feature">How you invoke</td>
+            <td class="agent-cell">"Use the <code class="inline">code-reviewer</code> agent…" or <code class="inline">@code-reviewer</code></td>
+            <td class="team-cell">"Create an agent team to review PR #142 — spawn three reviewers…"</td>
+          </tr>
+          <tr>
+            <td class="feature">Parallelism</td>
+            <td class="agent-cell"><span class="check">✓</span> Multiple at once, foreground or background.</td>
+            <td class="team-cell"><span class="check">✓</span> Full sessions in parallel; viewable in split-panes (tmux/iTerm2).</td>
+          </tr>
+          <tr>
+            <td class="feature">Cost profile</td>
+            <td class="agent-cell">Lightweight — one extra context per agent.</td>
+            <td class="team-cell">Heavier — each teammate is a full Claude Code session.</td>
+          </tr>
+          <tr>
+            <td class="feature">Built-ins</td>
+            <td class="agent-cell">Explore, Plan, general-purpose, statusline-setup, claude-code-guide, …</td>
+            <td class="team-cell">No fixed roster — you describe the team and it spawns teammates (can reference agent types).</td>
+          </tr>
+          <tr>
+            <td class="feature">Stability</td>
+            <td class="agent-cell"><span class="check">✓</span> GA — stable, widely used.</td>
+            <td class="team-cell"><span class="cross">⚠</span> Experimental, off by default. Known rough edges around resume/shutdown.</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- CODE EXAMPLES -->
+  <section>
+    <h2>Setup, side by side</h2>
+    <p class="sub">A subagent definition is a markdown file. A team is unlocked with one env flag.</p>
+
+    <div class="code-grid">
+      <div class="code-card agent">
+        <div class="head">
+          <span>Define a subagent</span>
+          <span class="file">.claude/agents/code-reviewer.md</span>
+        </div>
+<pre><span class="punct">---</span>
+<span class="key">name</span><span class="punct">:</span> <span class="str">code-reviewer</span>
+<span class="key">description</span><span class="punct">:</span> <span class="str">Expert code review specialist.</span>
+<span class="key">tools</span><span class="punct">:</span> <span class="str">Read, Grep, Glob, Bash</span>
+<span class="key">model</span><span class="punct">:</span> <span class="str">sonnet</span>
+<span class="punct">---</span>
+
+You are a senior code reviewer.
+Focus on correctness, security, and
+clarity. Return a punch list.</pre>
+      </div>
+
+      <div class="code-card team">
+        <div class="head">
+          <span>Enable agent teams</span>
+          <span class="file">~/.claude/settings.json</span>
+        </div>
+<pre><span class="punct">{</span>
+  <span class="key">"env"</span><span class="punct">:</span> <span class="punct">{</span>
+    <span class="key">"CLAUDE_CODE_EXPERIMENTAL_AGENT_TEAMS"</span><span class="punct">:</span> <span class="str">"1"</span>
+  <span class="punct">}</span>
+<span class="punct">}</span>
+
+<span class="com">// then, inside Claude Code:</span>
+<span class="com">// "Create an agent team to review</span>
+<span class="com">//  PR #142. Spawn three teammates:</span>
+<span class="com">//  security, performance, tests."</span></pre>
+      </div>
+    </div>
+  </section>
+
+  <!-- WHEN TO USE -->
+  <section>
+    <h2>When to reach for which</h2>
+    <p class="sub">The decision usually comes down to: <i>do the workers need to talk to each other?</i></p>
+
+    <div class="when">
+      <div class="when-card agent">
+        <h3>Reach for an Agent when…</h3>
+        <ul>
+          <li>You want to <b>protect your main context</b> from a noisy search or large file scan.</li>
+          <li>You need a <b>specialist with a narrow prompt</b> (reviewer, planner, explorer).</li>
+          <li>You want to <b>run several lookups in parallel</b> and merge the results yourself.</li>
+          <li>The work is <b>one-shot</b>: spawn, get answer, done.</li>
+          <li>You want a <b>reusable, version-controlled</b> definition checked into the repo.</li>
+        </ul>
+      </div>
+      <div class="when-card team">
+        <h3>Reach for a Team when…</h3>
+        <ul>
+          <li>The workers <b>need to talk to each other</b>, not just to you.</li>
+          <li>You want a <b>lead</b> to delegate, gather, and synthesize across teammates.</li>
+          <li>The task spans <b>multiple independent surfaces</b> (e.g., security + perf + tests on one PR).</li>
+          <li>You're okay with <b>higher token cost</b> in exchange for richer collaboration.</li>
+          <li>You're comfortable with <b>experimental</b> behavior and split-pane viewing.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- TL;DR -->
+  <section>
+    <div class="tldr">
+      <h3>TL;DR</h3>
+      <p>
+        <span class="agent-word">Agents</span> are <b>specialists you delegate to</b> — they report back to you and never see each other.
+        <span class="team-word">Teams</span> are <b>independent sessions that coordinate</b> — they message each other through a lead and operate in parallel.
+      </p>
+      <div class="warn">
+        <b>Heads-up:</b> "Teams" in Claude Code is <i>not</i> a billing tier or org/workspace feature — it's an experimental multi-agent orchestration mode. It doesn't share settings across humans; it orchestrates AI sessions on one machine.
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    Sources · <a href="https://code.claude.com/docs/en/subagents.md">Subagents docs</a> ·
+    <a href="https://code.claude.com/docs/en/agent-teams.md">Agent Teams docs</a>
+  </footer>
+
+</div>
+</body>
+</html>
