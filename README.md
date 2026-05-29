@@ -15,3 +15,5 @@ Deployed via Cloudflare Pages → live URLs for sharing instead of attaching HTM
 2. Add a link to it in `index.html`
 3. `git add . && git commit -m "Add <name>" && git push`
 4. Cloudflare Pages auto-deploys — live URL within a minute
+
+DEMO LINE — added for git revert demonstration
